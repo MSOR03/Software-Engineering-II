@@ -1,5 +1,5 @@
 # Principios SOLID
-
+## Sebastián Olarte Ramírez
 Los principios SOLID son cinco recomendaciones de diseño de software que ayudan a escribir código más **legible, limpio, mantenible y escalable**. Su objetivo principal es facilitar los cambios futuros sin generar errores o afectar partes que ya funcionan.
 
 > Los principios no solo aplican a programación orientada a objetos, sino también a frameworks modernos como React y Angular, e incluso al desarrollo backend.
