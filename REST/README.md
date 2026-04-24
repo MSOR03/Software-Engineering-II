@@ -54,4 +54,41 @@ Evidencia de la peticion al endpoint de episodios para consultar la informacion 
 Evidencia de la peticion al endpoint de ubicaciones usando un identificador especifico.
 
 
+## Algunos test implementados.
 
+Para la consulta para filtrar personajes se aplicaron los siguientes tests.
+
+- Probar que la consulta fue exitosa.
+- Probar que el resultados en un json.
+- Confirmar si hay resultados en el array.
+- Validar que el filtro se este aplicando.
+- Verificar que los resultados sean correctos y que traigan la información especificada mediante los filtros.
+
+ 
+```javascript
+pm.test("Status code is 200", function () {
+    pm.response.to.have.status(200);
+});
+
+pm.test("Respuesta es JSON", function () {
+    pm.response.to.be.json;
+});
+
+pm.test("Tiene resultados", function () {
+    const jsonData = pm.response.json();
+    pm.expect(jsonData.results.length).to.be.above(0);
+});
+
+pm.test("Todos los personajes contienen 'Rick'", function () {
+    const jsonData = pm.response.json();
+    jsonData.results.forEach(character => {
+        pm.expect(character.name.toLowerCase()).to.include("rick");
+    });
+});
+
+pm.test("Todos los personajes están vivos", function () {
+    const jsonData = pm.response.json();
+    jsonData.results.forEach(character => {
+        pm.expect(character.status).to.eql("Alive");
+    });
+});

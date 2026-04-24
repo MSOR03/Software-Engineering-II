@@ -46,3 +46,19 @@ Evidencia de la consulta enfocada en los idiomas disponibles dentro de la API.
 ![Consulta GraphQL anidada de pais y continente](media/nested_query.png)
 
 Evidencia de una consulta anidada donde se obtiene la informacion del pais junto con los datos de su continente relacionado.
+
+## Algunos test implementados.
+
+Para todas las consultas se implementaron los siguientes tests.
+
+- Probar que la consulta fue exitosa.
+- Probar que el resultados en un json.
+
+```javascript
+pm.test("Status code is 200", function () {
+    pm.response.to.have.status(200);
+});
+
+pm.test("Respuesta es JSON", function () {
+    pm.response.to.be.json;
+});
