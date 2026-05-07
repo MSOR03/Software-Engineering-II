@@ -1,0 +1,126 @@
+Register
+
+curl -X POST http://localhost:3000/auth/register \
+-H "Content-Type: application/json" \
+-d '{"username":"sebastian","email":"sebastian@test.com","password":"1234"}'
+
+Login
+
+curl -X POST http://localhost:3000/auth/login \
+-H "Content-Type: application/json" \
+-d '{"email":"sebastian@test.com","password":"1234"}'
+
+Store a token in a variable
+TOKEN=$(curl -s -X POST http://localhost:3000/auth/login \
+-H "Content-Type: application/json" \
+-d '{"email":"sebastian@test.com","password":"1234"}' | jq -r '.token')
+
+get tasks with token 
+
+curl -X GET http://localhost:3000/tasks \
+-H "Authorization: Bearer $TOKEN"
+
+Create a new task
+curl -X POST http://localhost:3000/tasks \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $TOKEN" \
+-d '{"title":"Estudiar JWT","description":"Practicar"}'
+
+curl -X GET http://localhost:3000/tasks \
+-H "Authorization: Bearer $TOKEN"
+
+Create and store a new task
+TASK=$(curl -s -X POST http://localhost:3000/tasks \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $TOKEN" \
+-d '{"title":"Tarea de prueba","description":"Para probar PUT y DELETE"}')
+
+
+Store ID task
+TASK_ID=$(echo $TASK | jq -r '.id')
+echo $TASK_ID
+
+Update a task with put method
+
+curl -X PUT http://localhost:3000/tasks/$TASK_ID \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $TOKEN" \
+-d '{"status":"completed"}'
+
+
+
+PUT METHOD TO UPDAT TASK
+if (method === 'PUT' && url.startsWith('/tasks/')) {
+  const usuario = autenticar(req);
+
+  if (!usuario)
+    return send(res, 401, { error: 'Token requerido o invalido' });
+
+  const id = url.split('/')[2];
+
+  // TODO 1: Buscar la tarea por id en db.tasks
+  const tarea = db.tasks.find(t => t.id === id);
+
+  // TODO 2: Si no existe, retornar 404
+  if (!tarea)
+    return send(res, 404, { error: 'Tarea no encontrada' });
+
+  // TODO 3: Verificar que task.userId === usuario.userId, si no retornar 403
+  if (tarea.userId !== usuario.userId)
+    return send(res, 403, {
+      error: 'No autorizado para modificar esta tarea'
+    });
+
+  // TODO 4: Leer el body y actualizar los campos recibidos (title, description, status)
+  const { title, description, status } = await readBody(req);
+
+  if (title) tarea.title = title;
+  if (description) tarea.description = description;
+  if (status) tarea.status = status;
+
+  // TODO 5: Retornar la tarea actualizada con status 200
+  return send(res, 200, tarea);
+}
+
+
+DELETE TASK WITH DELETE METHOD
+curl -X DELETE http://localhost:3000/tasks/$TASK_ID \
+-H "Authorization: Bearer $TOKEN"
+
+  // DELETE /tasks/:id  <-- TODO: completar en grupo
+  if (method === "DELETE" && url.startsWith("/tasks/")) {
+    const usuario = autenticar(req);
+
+    if (!usuario)
+      return send(res, 401, { error: "Token requerido o invalido" });
+
+    const id = url.split("/")[2];
+
+    // TODO 1: Buscar la tarea por id en db.tasks
+    const tarea = db.tasks.find((t) => t.id === id);
+
+    // TODO 2: Si no existe, retornar 404
+    if (!tarea) return send(res, 404, { error: "Tarea no encontrada" });
+
+    // TODO 3: Verificar que task.userId === usuario.userId, si no retornar 403
+    if (tarea.userId !== usuario.userId)
+      return send(res, 403, {
+        error: "No autorizado para eliminar esta tarea",
+      });
+
+    // TODO 4: Eliminar la tarea del arreglo db.tasks
+    db.tasks = db.tasks.filter((t) => t.id !== id);
+
+    // TODO 5: Retornar status 204 sin body
+    res.writeHead(204);
+    return res.end();
+  }
+
+  send(res, 404, { error: "Ruta no encontrada" });
+});
+
+
+
+Then we used the ssh connection with a windows operating system , with the user sebastian and IP address 192.168.100.50.
+
+Finally we tested the endpoints to register, login, create a new task and update and delete as you can see in the image.
