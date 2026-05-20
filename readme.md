@@ -1,262 +1,99 @@
-# Ingeniería de Software II
+# Patrones de Diseño – Ingeniería de Software II
 
-### Maicol Sebastian Olarte Ramirez
-
----
-
-## 📌 Descripción
-
-Laboratorio de autenticación con JWT (JSON Web Tokens) usando Node.js. Se implementa un servidor HTTP que expone endpoints para registro, inicio de sesión y gestión de tareas protegidas mediante tokens. Adicionalmente, se realizaron pruebas desde un sistema operativo Windows mediante conexión SSH.
+Este repositorio contiene implementaciones en Python de los patrones de diseño clásicos de la **Gang of Four (GoF)**, organizadas por combinación de patrones.
 
 ---
 
-## 🔧 Requisitos previos
 
-- Node.js instalado
-- `curl` disponible en la terminal
-- `jq` para el procesamiento de JSON en la terminal
-- Acceso SSH al servidor (usuario: `sebastian`, IP: `192.168.100.50`)
+## Implementaciones
 
----
+### 1. Singleton – `singleton/singleton_login.py`
 
-## 🚀 Procedimiento
+**Patrón:** Singleton  
+**Categoría:** Creacional
 
-### 1. Registro de usuario
+Garantiza que solo exista **una instancia** de `LoginManager` en toda la aplicación y proporciona un punto de acceso global a ella.
 
-Se registra un nuevo usuario enviando una petición `POST` al endpoint `/auth/register`.
+- Se sobreescribe `__new__` para interceptar la creación del objeto y devolver siempre la misma instancia.
+- La primera llamada crea la instancia; las llamadas posteriores devuelven la instancia almacenada.
+- `_instance` es una variable de clase que almacena la única instancia.
 
-```bash
-curl -X POST http://localhost:3000/auth/register \
--H "Content-Type: application/json" \
--d '{"username":"sebastian","email":"sebastian@test.com","password":"1234"}'
-```
+**Clases principales:**
+| Clase | Rol |
+|---|---|
+| `LoginManager` | Clase singleton que gestiona el usuario actualmente autenticado |
 
-![Registro de usuario](images/register_request.png)
+![Diagrama Singleton](media/singleton.png)
 
 ---
 
-### 2. Inicio de sesión (Login)
+### 2. Factory Method – `factory/factory_logger.py`
 
-Se autentica el usuario con las credenciales registradas mediante una petición `POST` al endpoint `/auth/login`.
+**Patrón:** Factory Method  
+**Categoría:** Creacional
 
-```bash
-curl -X POST http://localhost:3000/auth/login \
--H "Content-Type: application/json" \
--d '{"email":"sebastian@test.com","password":"1234"}'
-```
+Define una interfaz (`LoggerFactory`) para crear un objeto logger, pero deja que las **subclases decidan qué clase instanciar**.
 
-![Inicio de sesión](images/login.png)
+- `Logger` es el producto abstracto; `FileLogger` y `DatabaseLogger` son los productos concretos.
+- `LoggerFactory` es el creador abstracto; `FileLoggerFactory` y `DatabaseLoggerFactory` son los creadores concretos.
+- El código cliente trabaja contra la interfaz `Logger`, no contra clases concretas.
 
----
+**Clases principales:**
+| Clase | Rol |
+|---|---|
+| `Logger` | Producto abstracto (interfaz) |
+| `FileLogger` / `DatabaseLogger` | Productos concretos |
+| `LoggerFactory` | Creador abstracto |
+| `FileLoggerFactory` / `DatabaseLoggerFactory` | Creadores concretos |
 
-### 3. Almacenar el token en una variable
-
-Para facilitar el uso del token JWT en las siguientes peticiones, se almacena directamente en una variable de entorno.
-
-```bash
-TOKEN=$(curl -s -X POST http://localhost:3000/auth/login \
--H "Content-Type: application/json" \
--d '{"email":"sebastian@test.com","password":"1234"}' | jq -r '.token')
-```
-
-![Almacenar token en variable](images/store_token.png)
+![Diagrama Factory Method](media/factory.png)
 
 ---
 
-### 4. Obtener tareas con token
+### 3. Factory + Adapter – `factory_adapter/factory_adapter.py`
 
-Se consultan las tareas del usuario autenticado enviando el token en el encabezado `Authorization`.
+**Patrones:** Factory + Adapter  
+**Categoría:** Creacional + Estructural
 
-```bash
-curl -X GET http://localhost:3000/tasks \
--H "Authorization: Bearer $TOKEN"
-```
+Combina una **fábrica estática** que crea loggers con un **adaptador** que envuelve al `OldLogger` legado para que cumpla con la interfaz moderna `Logger`.
 
-> **Nota:** Si se intenta acceder sin token, el servidor responde con error de autenticación.
+- `OldLogger` tiene un método incompatible (`old_write`); `LoggerAdapter` traduce las llamadas a `write_log` hacia `old_write`.
+- `LoggerFactory.create_logger()` actúa como punto de entrada único que devuelve un logger nativo o uno adaptado, ocultando la incompatibilidad al cliente.
 
-![Petición sin token](images/request_task_without_token.png)
+**Clases principales:**
+| Clase | Rol |
+|---|---|
+| `Logger` | Interfaz destino |
+| `OldLogger` | Clase legada incompatible |
+| `LoggerAdapter` | Adaptador – hace que `OldLogger` cumpla con `Logger` |
+| `ConsoleLogger` | Logger concreto nativo |
+| `LoggerFactory` | Fábrica estática – crea el logger adecuado según el tipo |
 
-![Obtener tareas con token](images/get_tasks_with_token.png)
-
----
-
-### 5. Crear una nueva tarea
-
-Se crea una nueva tarea enviando una petición `POST` al endpoint `/tasks` con el token de autorización.
-
-```bash
-curl -X POST http://localhost:3000/tasks \
--H "Content-Type: application/json" \
--H "Authorization: Bearer $TOKEN" \
--d '{"title":"Estudiar JWT","description":"Practicar"}'
-```
-
-Luego se verifica que la tarea fue creada consultando nuevamente las tareas:
-
-```bash
-curl -X GET http://localhost:3000/tasks \
--H "Authorization: Bearer $TOKEN"
-```
-
-![Crear nueva tarea](images/create_new_task.png)
+![Diagrama Factory + Adapter](media/factory_adapter.png)
 
 ---
 
-### 6. Crear y almacenar una tarea (para pruebas de PUT y DELETE)
+### 4. Factory + Decorator + Command – `factory_decorator_command/factory_decorator_command.py`
 
-Se crea una tarea y se almacena la respuesta en una variable para obtener su `id`.
+**Patrones:** Factory + Decorator + Command  
+**Categoría:** Creacional + Estructural + Comportamental
 
-```bash
-TASK=$(curl -s -X POST http://localhost:3000/tasks \
--H "Content-Type: application/json" \
--H "Authorization: Bearer $TOKEN" \
--d '{"title":"Tarea de prueba","description":"Para probar PUT y DELETE"}')
-```
+Combina tres patrones para construir un pipeline de ejecución de comandos flexible:
 
-![Crear y almacenar tarea](images/create_and_store_task.png)
+- **Command** – encapsula una solicitud (`LoginCommand`, `LogoutCommand`) como un objeto con un método `execute()`.
+- **Decorator** – `CommandLogger` envuelve cualquier `Command` y agrega registro (logging) antes y después de la ejecución sin modificar el comando original.
+- **Factory** – `CommandFactory.create_command()` crea el comando correcto y **automáticamente lo envuelve** con el decorador antes de devolverlo.
 
----
+**Clases principales:**
+| Clase | Rol |
+|---|---|
+| `LoginSystem` | Receptor – ejecuta las acciones reales de login/logout |
+| `Command` | Interfaz abstracta de comando |
+| `LoginCommand` / `LogoutCommand` | Comandos concretos |
+| `CommandLogger` | Decorador – agrega logging alrededor de cualquier comando |
+| `CommandFactory` | Fábrica – crea y decora comandos en un solo paso |
 
-### 7. Obtener el ID de la tarea
+![Diagrama Factory + Decorator + Command](media/factory_decorator_command.png)
 
-Se extrae el `id` de la tarea almacenada para usarlo en las siguientes operaciones.
 
-```bash
-TASK_ID=$(echo $TASK | jq -r '.id')
-echo $TASK_ID
-```
 
-![Obtener ID de tarea](images/get_task_id.png)
-
----
-
-### 8. Actualizar una tarea (método PUT)
-
-Se actualiza el estado de la tarea utilizando el método `PUT`.
-
-```bash
-curl -X PUT http://localhost:3000/tasks/$TASK_ID \
--H "Content-Type: application/json" \
--H "Authorization: Bearer $TOKEN" \
--d '{"status":"completed"}'
-```
-
-#### Implementación del método PUT en el servidor
-
-```javascript
-if (method === 'PUT' && url.startsWith('/tasks/')) {
-  const usuario = autenticar(req);
-
-  if (!usuario)
-    return send(res, 401, { error: 'Token requerido o invalido' });
-
-  const id = url.split('/')[2];
-
-  // Buscar la tarea por id en db.tasks
-  const tarea = db.tasks.find(t => t.id === id);
-
-  // Si no existe, retornar 404
-  if (!tarea)
-    return send(res, 404, { error: 'Tarea no encontrada' });
-
-  // Verificar que task.userId === usuario.userId, si no retornar 403
-  if (tarea.userId !== usuario.userId)
-    return send(res, 403, {
-      error: 'No autorizado para modificar esta tarea'
-    });
-
-  // Leer el body y actualizar los campos recibidos (title, description, status)
-  const { title, description, status } = await readBody(req);
-
-  if (title) tarea.title = title;
-  if (description) tarea.description = description;
-  if (status) tarea.status = status;
-
-  // Retornar la tarea actualizada con status 200
-  return send(res, 200, tarea);
-}
-```
-
-![Actualizar tarea](images/update_task.png)
-
----
-
-### 9. Eliminar una tarea (método DELETE)
-
-Se elimina la tarea utilizando el método `DELETE` con el `id` almacenado.
-
-```bash
-curl -X DELETE http://localhost:3000/tasks/$TASK_ID \
--H "Authorization: Bearer $TOKEN"
-```
-
-#### Implementación del método DELETE en el servidor
-
-```javascript
-if (method === "DELETE" && url.startsWith("/tasks/")) {
-  const usuario = autenticar(req);
-
-  if (!usuario)
-    return send(res, 401, { error: "Token requerido o invalido" });
-
-  const id = url.split("/")[2];
-
-  // Buscar la tarea por id en db.tasks
-  const tarea = db.tasks.find((t) => t.id === id);
-
-  // Si no existe, retornar 404
-  if (!tarea) return send(res, 404, { error: "Tarea no encontrada" });
-
-  // Verificar que task.userId === usuario.userId, si no retornar 403
-  if (tarea.userId !== usuario.userId)
-    return send(res, 403, {
-      error: "No autorizado para eliminar esta tarea",
-    });
-
-  // Eliminar la tarea del arreglo db.tasks
-  db.tasks = db.tasks.filter((t) => t.id !== id);
-
-  // Retornar status 204 sin body
-  res.writeHead(204);
-  return res.end();
-}
-```
-
-![Eliminar tarea](images/delete_task.png)
-
----
-
-## 🖥️ Conexión SSH desde Windows
-
-Se estableció una conexión SSH al servidor Linux desde un sistema operativo Windows, utilizando las siguientes credenciales:
-
-| Parámetro | Valor             |
-|-----------|-------------------|
-| Usuario   | `sebastian`       |
-| IP        | `192.168.100.50`  |
-
-```bash
-ssh sebastian@192.168.100.50
-```
-
-![Conexión SSH desde Windows](images/ssh_connection_from_windows.png)
-
----
-
-### Prueba de endpoints PUT y DELETE desde Windows vía SSH
-
-Una vez establecida la conexión SSH, se probaron los endpoints de actualización y eliminación de tareas directamente desde la terminal de Windows.
-
-![Prueba de métodos PUT y DELETE desde SSH](images/ssh_put_delete_methods.png)
-
----
-
-## ✅ Conclusión
-
-Se implementó y probó exitosamente un servidor de autenticación con JWT que permite:
-
-- Registro e inicio de sesión de usuarios.
-- Protección de rutas mediante tokens JWT.
-- Creación, consulta, actualización y eliminación de tareas (CRUD completo).
-- Verificación de autorización por propietario de cada tarea.
-- Validación de los endpoints desde un sistema operativo Windows mediante conexión SSH.
